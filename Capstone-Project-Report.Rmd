@@ -1,0 +1,90 @@
+---
+title: "Movie Recommendation Capstone Project"
+author: "Kevin Nolasco"
+date: "9/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+The objective of this project is to predict movie ratings for various users using the **MovieLens Dataset**. The dataset has 9,000,055 rows and 6 columns. The columns are:
+
+  + userId: The class of userId is *integer*.
+  + movieId: The class of movieId is *numeric*.
+  + rating: The class of rating is *numeric*.
+  + timestamp: The class of timestamp is *integer*.
+  + title: The class of title is *character*.
+  + genres: The class of genres is *character*.
+
+There are 10,677 different movies and 69,878 different users in the dataset.
+
+# Methods/Analysis
+
+First, we load  MovieLens dataset and create the edx and validation sets.
+
+```{r echo = FALSE}
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+
+# MovieLens 10M dataset:
+# https://grouplens.org/datasets/movielens/10m/
+# http://files.grouplens.org/datasets/movielens/ml-10m.zip
+
+dl <- tempfile()
+download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
+
+ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
+                 col.names = c("userId", "movieId", "rating", "timestamp"))
+
+movies <- str_split_fixed(readLines(unzip(dl, "ml-10M100K/movies.dat")), "\\::", 3)
+colnames(movies) <- c("movieId", "title", "genres")
+
+# if using R 3.6 or earlier
+movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(levels(movieId))[movieId],
+                                           title = as.character(title),
+                                           genres = as.character(genres))
+
+
+movielens <- left_join(ratings, movies, by = "movieId")
+
+# Validation set will be 10% of MovieLens data
+set.seed(1, sample.kind="Rounding")
+# if using R 3.5 or earlier, use `set.seed(1)` instead
+test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
+edx <- movielens[-test_index,]
+temp <- movielens[test_index,]
+
+# Make sure userId and movieId in validation set are also in edx set
+validation <- temp %>% 
+  semi_join(edx, by = "movieId") %>%
+  semi_join(edx, by = "userId")
+
+# Add rows removed from validation set back into edx set
+removed <- anti_join(temp, validation)
+edx <- rbind(edx, removed)
+
+rm(dl, ratings, movies, test_index, temp, movielens, removed)
+
+```
+
+
+The model that will be implemented is a machine learning model that uses regularization. Since I focused on machine learning algorithms, the first thing to do was to split the edx dataset into test and training sets using the caret package.
+
+```{r}
+library(caret)
+test_index <- createDataPartition(edx$rating, times = 1, p = 0.2, list = FALSE)
+test_set <- edx[test_index,]
+train_set <- edx[-test_index,]
+```
+
+
+I avoided any regression techniques since they will be very costly given the size of the dataset. The theory behind regularization states that we are looking for a $\lambda$ that minimizes the least squares estimate and a penalty term. The value of $\lambda$ used for regularization was found using cross-validation.
+
+```{r}
+
+```
+
